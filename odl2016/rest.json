@@ -1,0 +1,295 @@
+{
+    "service-functions": {
+        "service-function": [
+            {
+                "name": "firewall-0-3",
+                "ip-mgmt-address": "11.0.0.3",
+                "type": "service-function-type:firewall",
+                "nsh-aware": "true",
+                "sf-data-plane-locator": [
+                    {
+                        "name": "eth0-0-3",
+                        "mac": "fa:16:3e:bb:e3:e5",
+                        "transport": "service-locator:eth-nsh",
+                        "service-function-forwarder": "SFF1"
+                    }
+                ]
+            },
+            {
+                "name": "dpi-0-4",
+                "ip-mgmt-address": "11.0.0.4",
+                "type": "service-function-type:dpi",
+                "nsh-aware": "true",
+                "sf-data-plane-locator": [
+                    {
+                        "name": "eth0-0-4",
+                        "mac": "fa:16:3e:6e:0f:28",
+                        "transport": "service-locator:eth-nsh",
+                        "service-function-forwarder": "SFF2"
+                    }
+                ]
+            }
+        ]
+    }
+}
+
+
+{
+    "service-function-forwarders": {
+        "service-function-forwarder": [
+            {
+                "name": "SFF1",
+                "service-node": "odl31",
+                "service-function-forwarder-ovs:ovs-bridge": {
+                    "bridge-name": "br-int"
+                },
+                "service-function-dictionary": [
+                    {
+                        "name": "firewall-0-3",
+                        "sff-sf-data-plane-locator": {
+                           "sf-dpl-name": "eth0-0-3",
+                           "sff-dpl-name": "vxlangpe-31"
+                        }
+                    }
+                ],
+                "sff-data-plane-locator": [
+                    {
+                        "name": "vxlangpe-31",
+                        "data-plane-locator": {
+                            "transport": "service-locator:eth-nsh",
+                            "port": 4790,
+                            "ip": "192.168.50.31"
+                        },
+                        "service-function-forwarder-ovs:ovs-options": {
+                            "remote-ip": "flow",
+                            "dst-port": "4790",
+                            "key": "flow",
+                            "exts": "gpe"
+                        },
+                        "service-function-forwarder-ofs:ofs-port": {
+                            "port-id": "6"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "SFF2",
+                "service-node": "odl32",
+                "service-function-forwarder-ovs:ovs-bridge": {
+                    "bridge-name": "br-int"
+                },
+                "service-function-dictionary": [
+                    {
+                        "name": "dpi-0-4",
+                        "sff-sf-data-plane-locator": {
+                           "sf-dpl-name": "eth0-0-4",
+                           "sff-dpl-name": "vxlangpe-32"
+                        }
+                    }
+                ],
+                "sff-data-plane-locator": [
+                    {
+                        "name": "vxlangpe-32",
+                        "data-plane-locator": {
+                            "transport": "service-locator:eth-nsh",
+                            "port": 4790,
+                            "ip": "192.168.50.32"
+                        },
+                        "service-function-forwarder-ovs:ovs-options": {
+                            "remote-ip": "flow",
+                            "dst-port": "4790",
+                            "key": "flow",
+                            "exts": "gpe"
+                        },
+                        "service-function-forwarder-ofs:ofs-port": {
+                            "port-id": "4"
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}
+
+
+{
+    "service-function-chains": {
+        "service-function-chain": [
+            {
+                "name": "SFCGBP",
+                "symmetric": "true",
+                "sfc-service-function": [
+                    {
+                        "name": "firewall-abstract1",
+                        "type": "service-function-type:firewall"
+                    },
+                    {
+                        "name": "dpi-abstract1",
+                        "type": "service-function-type:dpi"
+                    }
+                ]
+            }
+        ]
+    }
+}
+
+
+{
+  "service-function-metadata": {
+    "context-metadata": [
+      {
+        "name": "NSH1",
+        "context-header1": "1",
+        "context-header2": "2",
+        "context-header3": "3",
+        "context-header4": "4"
+      }
+    ]
+  }
+}
+
+
+{
+    "service-function-paths": {
+        "service-function-path": [
+            {
+                "name": "SFCGBP-Path",
+                "service-chain-name": "SFCGBP",
+                "transport-type": "service-locator:eth-nsh",
+                "starting-index": 255,
+                "classifier": "Classifier1",
+                "symmetric-classifier": "Classifier2",
+                "context-metadata": "NSH1",
+                "symmetric": "true"
+
+            }
+        ]
+    }
+}
+
+
+{
+    "input": {
+        "name": "SFCGBP-RSP1",
+        "parent-service-function-path": "SFCGBP-Path",
+        "symmetric": "true"
+    }
+}
+
+
+{
+  "access-lists": {
+    "acl": [
+      {
+        "acl-name": "ACL1",
+        "access-list-entries": {
+          "ace": [
+            {
+              "rule-name": "ACE11",
+              "actions": {
+                "service-function-acl:rendered-service-path": "SFCGBP-RSP1"
+              },
+              "matches": {
+                "destination-ipv4-network": "10.100.5.4/32",
+                "source-ipv4-network": "10.100.5.3/32",
+                "protocol": "1",
+                "source-port-range": {
+                    "lower-port": "0"
+                },
+                "destination-port-range": {
+                    "lower-port": "0"
+                }
+              }
+            },
+            {
+              "rule-name": "ACE12",
+              "actions": {
+                "service-function-acl:rendered-service-path": "SFCGBP-RSP1"
+              },
+              "matches": {
+                "destination-ipv4-network": "10.100.5.4/32",
+                "source-ipv4-network": "10.100.5.3/32",
+                "protocol": "6",
+                "source-port-range": {
+                  "lower-port": "0",
+                },
+                "destination-port-range": {
+                    "lower-port": "80"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "acl-name": "ACL2",
+        "access-list-entries": {
+          "ace": [
+            {
+              "rule-name": "ACE21",
+              "actions": {
+                "service-function-acl:rendered-service-path": "SFCGBP-RSP1-Reverse"
+              },
+              "matches": {
+                "destination-ipv4-network": "10.100.5.3/32",
+                "source-ipv4-network": "10.100.5.4/32",
+                "protocol": "1",
+                "source-port-range": {
+                    "lower-port": "0"
+                },
+                "destination-port-range": {
+                    "lower-port": "0"
+                }
+              }
+            },
+            {
+              "rule-name": "ACE22",
+              "actions": {
+                "service-function-acl:rendered-service-path": "SFCGBP-RSP1-Reverse"
+              },
+              "matches": {
+                "destination-ipv4-network": "10.100.5.3/32",
+                "source-ipv4-network": "10.100.5.4/32",
+                "protocol": "6",
+                "source-port-range": {
+                    "lower-port": "80"
+                },
+                "destination-port-range": {
+                    "lower-port": "0"
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+
+
+{
+  "service-function-classifiers": {
+    "service-function-classifier": [
+      {
+        "name": "Classifier1",
+        "scl-service-function-forwarder": [
+          {
+            "name": "SFF1",
+            "interface": "tap9c01a0ca-9e"
+          }
+        ],
+        "access-list": "ACL1"
+      },
+      {
+        "name": "Classifier2",
+        "scl-service-function-forwarder": [
+          {
+            "name": "SFF2",
+            "interface": "tapad0faddb-ca"
+          }
+        ],
+        "access-list": "ACL2"
+      }
+    ]
+  }
+}
